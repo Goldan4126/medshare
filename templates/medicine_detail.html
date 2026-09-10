@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card form-card">
+      {% if medicine.image_filename %}
+      <img src="{{ url_for('static', filename='uploads/' + medicine.image_filename) }}" class="med-card-img" style="height:220px;" alt="{{ medicine.name }}">
+      {% else %}
+      <div class="med-card-img-placeholder" style="height:220px; font-size:3.5rem;">💊</div>
+      {% endif %}
+      <div class="card-body p-4">
+        <h3>{{ medicine.name }}
+          {% if medicine.category %}<span class="badge badge-category">{{ medicine.category }}</span>{% endif %}
+        </h3>
+        {% if medicine.generic_name %}<p class="generic-name">Generic: {{ medicine.generic_name }}</p>{% endif %}
+        <p><span class="text-decoration-line-through text-muted">₹{{ medicine.original_price }}</span>
+           <span class="fw-bold text-success ms-2">₹{{ medicine.discounted_price }}</span>
+           <span class="badge bg-danger ms-1">{{ medicine.discount_percent }}% OFF</span></p>
+        <p>Expiry Date: {{ medicine.expiry_date }}
+          {% if medicine.days_to_expiry <= 7 %}<span class="badge bg-danger ms-1">⚠️ Only {{ medicine.days_to_expiry }} days left!</span>
+          {% elif medicine.days_to_expiry <= 30 %}<span class="badge bg-warning text-dark ms-1">⏳ {{ medicine.days_to_expiry }} days left</span>
+          {% endif %}
+        </p>
+        <p>Available Quantity: {{ medicine.quantity }}</p>
+        <p>Sold by: <a href="{{ url_for('pharmacy_medicines', seller_id=medicine.seller.id) }}">{{ medicine.seller.display_name }}</a>
+          {% if medicine.seller.avg_rating %}<span class="small text-muted">⭐ {{ medicine.seller.avg_rating }} ({{ medicine.seller.review_count }})</span>{% endif %}
+        </p>
+
+        <form method="POST" action="{{ url_for('place_order', med_id=medicine.id) }}" id="orderForm">
+          <div class="mb-3">
+            <label class="form-label">Quantity</label>
+            <input type="number" name="quantity" min="1" max="{{ medicine.quantity }}" value="1" class="form-control" required>
+          </div>
+          <div class="mb-3" id="addressSection" style="display:none;">
+            <label class="form-label">Delivery Address</label>
+            <input type="text" name="address_pincode" id="pincodeInput" class="form-control mb-2" placeholder="Pincode" pattern="[0-9]{6}" maxlength="6" title="6 digit pincode">
+            <p class="small mb-2" id="pincodeStatus"></p>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <input type="text" name="address_district" id="districtInput" class="form-control" placeholder="District">
+              </div>
+              <div class="col-6">
+                <input type="text" name="address_city" id="cityInput" class="form-control" placeholder="City">
+              </div>
+            </div>
+            <select name="address_state" id="stateInput" class="form-select mb-2">
+              <option value="" disabled selected>Select State</option>
+              <option>Andhra Pradesh</option>
+              <option>Arunachal Pradesh</option>
+              <option>Assam</option>
+              <option>Bihar</option>
+              <option>Chhattisgarh</option>
+              <option>Goa</option>
+              <option>Gujarat</option>
+              <option>Haryana</option>
+              <option>Himachal Pradesh</option>
+              <option>Jharkhand</option>
+              <option>Karnataka</option>
+              <option>Kerala</option>
+              <option>Madhya Pradesh</option>
+              <option>Maharashtra</option>
+              <option>Manipur</option>
+              <option>Meghalaya</option>
+              <option>Mizoram</option>
+              <option>Nagaland</option>
+              <option>Odisha</option>
+              <option>Punjab</option>
+              <option>Rajasthan</option>
+              <option>Sikkim</option>
+              <option>Tamil Nadu</option>
+              <option>Telangana</option>
+              <option>Tripura</option>
+              <option>Uttar Pradesh</option>
+              <option>Uttarakhand</option>
+              <option>West Bengal</option>
+              <option>Andaman and Nicobar Islands</option>
+              <option>Chandigarh</option>
+              <option>Dadra and Nagar Haveli and Daman and Diu</option>
+              <option>Delhi</option>
+              <option>Jammu and Kashmir</option>
+              <option>Ladakh</option>
+              <option>Lakshadweep</option>
+              <option>Puducherry</option>
+            </select>
+            <input type="text" name="address_line" class="form-control mb-2" placeholder="House no, street, area">
+            <input type="tel" name="address_phone" class="form-control" placeholder="Contact Phone Number" pattern="[0-9]{10}" maxlength="10" title="10 digit phone number">
+          </div>
+          <button type="button" class="btn btn-success w-100" id="placeOrderBtn">Place Order</button>
+          <button class="btn btn-success w-100" type="submit" id="confirmOrderBtn" style="display:none;">Confirm Order</button>
+        </form>
+        <form method="POST" action="{{ url_for('add_to_cart', med_id=medicine.id) }}" class="mt-2">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="btn btn-outline-success w-100">🛒 Add to Cart</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const addressSection = document.getElementById('addressSection');
+const placeOrderBtn = document.getElementById('placeOrderBtn');
+const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+const addressInputs = addressSection.querySelectorAll('input, select');
+const pincodeInput = document.getElementById('pincodeInput');
+const districtInput = document.getElementById('districtInput');
+const cityInput = document.getElementById('cityInput');
+const stateInput = document.getElementById('stateInput');
+const pincodeStatus = document.getElementById('pincodeStatus');
+
+placeOrderBtn.addEventListener('click', function() {
+  addressSection.style.display = 'block';
+  addressInputs.forEach(function(input) { input.required = true; });
+  placeOrderBtn.style.display = 'none';
+  confirmOrderBtn.style.display = 'block';
+  pincodeInput.focus();
+});
+
+pincodeInput.addEventListener('input', function() {
+  const pin = pincodeInput.value.trim();
+  if (pin.length !== 6 || !/^[0-9]{6}$/.test(pin)) {
+    pincodeStatus.textContent = '';
+    return;
+  }
+  pincodeStatus.textContent = 'Looking up pincode...';
+  pincodeStatus.className = 'small mb-2 text-muted';
+
+  fetch('https://api.postalpincode.in/pincode/' + pin)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      const result = data && data[0];
+      if (result && result.Status === 'Success' && result.PostOffice && result.PostOffice.length) {
+        const office = result.PostOffice[0];
+        districtInput.value = office.District || '';
+        cityInput.value = office.Block && office.Block !== 'NA' ? office.Block : office.District || '';
+        stateInput.value = office.State || '';
+        pincodeStatus.textContent = '✅ Location found — please verify before ordering';
+        pincodeStatus.className = 'small mb-2 text-success';
+      } else {
+        pincodeStatus.textContent = 'Could not find this pincode. Please fill District/City/State manually.';
+        pincodeStatus.className = 'small mb-2 text-warning';
+      }
+    })
+    .catch(function() {
+      pincodeStatus.textContent = 'Could not reach lookup service. Please fill District/City/State manually.';
+      pincodeStatus.className = 'small mb-2 text-warning';
+    });
+});
+
+document.getElementById('orderForm').addEventListener('submit', function() {
+  confirmOrderBtn.classList.add('btn-validating');
+  confirmOrderBtn.innerHTML = '<span class="spinner-inline"></span>Validating stock...';
+});
+</script>
+{% endblock %}

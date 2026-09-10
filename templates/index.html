@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero fade-in-up">
+    <span class="hero-badge">🌱 Reducing Medicine Wastage, One Sale at a Time</span>
+    <h1>Save on Medicines.<br>Before They Expire.</h1>
+    <p class="lead">MedShare connects patients with near-expiry medicines at genuine discounts — helping pharmacies clear stock before it expires, and helping patients save money.</p>
+    <form method="get" action="{{ url_for('index') }}#browse" class="d-flex flex-wrap gap-2" style="max-width:520px;">
+      <input type="text" name="search" class="form-control" style="flex:1; min-width:220px;" placeholder="Search medicine or generic name..." value="{{ request.args.get('search','') }}">
+      <button class="btn btn-hero" type="submit">Search</button>
+    </form>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-section">
+    <div class="row g-3 g-lg-4">
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--emerald-50);">👥</div>
+          <div class="stat-number">{{ stats.users }}+</div>
+          <div class="stat-label">Registered Users</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f0fdfa;">💊</div>
+          <div class="stat-number">{{ stats.medicines }}+</div>
+          <div class="stat-label">Medicines Listed</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f0f9ff;">🛍️</div>
+          <div class="stat-number">{{ stats.orders }}+</div>
+          <div class="stat-label">Orders Completed</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fff1f2;">⏳</div>
+          <div class="stat-number">{{ stats.medicines }}+</div>
+          <div class="stat-label">Deals Before Expiry</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURED MEDICINES -->
+  {% if featured %}
+  <div class="mt-5">
+    <p class="section-eyebrow">Top Deals</p>
+    <h2 class="section-title">Featured Discounted Medicines</h2>
+    <p class="section-sub">Handpicked deals with the biggest savings</p>
+    <div class="row">
+      {% for m in featured %}
+      <div class="col-md-4 mb-4">
+        <div class="card med-card h-100">
+          {% if m.image_filename %}
+          <img src="{{ url_for('static', filename='uploads/' + m.image_filename) }}" class="med-card-img" alt="{{ m.name }}">
+          {% else %}
+          <div class="med-card-img-placeholder">💊</div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ m.name }}
+              {% if m.category %}<span class="badge badge-category">{{ m.category }}</span>{% endif %}
+            </h5>
+            {% if m.generic_name %}<p class="generic-name mb-1">Generic: {{ m.generic_name }}</p>{% endif %}
+            <p class="mb-1"><span class="text-decoration-line-through text-muted">₹{{ m.original_price }}</span>
+               <span class="fw-bold text-success ms-2">₹{{ m.discounted_price }}</span>
+               <span class="badge badge-discount ms-1">{{ m.discount_percent }}% OFF</span>
+            </p>
+            <p class="mb-2 small">Expires in {{ m.days_to_expiry }} days</p>
+            <a href="{{ url_for('medicine_detail', med_id=m.id) }}" class="btn btn-sm btn-outline-success">View & Order</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- PHARMACIES -->
+  {% if pharmacies %}
+  <div class="mt-5">
+    <p class="section-eyebrow">Verified Pharmacies</p>
+    <h2 class="section-title">Browse by Pharmacy</h2>
+    <p class="section-sub">Click a pharmacy to see everything they currently have in stock</p>
+    <div class="row">
+      {% for p in pharmacies %}
+      <div class="col-md-3 col-6 mb-4">
+        <a href="{{ url_for('pharmacy_medicines', seller_id=p.seller.id) }}" class="text-decoration-none">
+          <div class="role-card text-center h-100">
+            {% if p.seller.shop_photo %}
+            <img src="{{ url_for('static', filename='uploads/' + p.seller.shop_photo) }}" class="mx-auto d-block" style="width:56px; height:56px; object-fit:cover; border-radius:14px;" alt="{{ p.seller.display_name }}">
+            {% else %}
+            <div class="role-icon mx-auto" style="background:var(--emerald-50); width:56px; height:56px; font-size:1.8rem;">🏪</div>
+            {% endif %}
+            <h6 class="fw-bold mt-2 mb-1" style="color:var(--gray-900);">{{ p.seller.display_name }}</h6>
+            <p class="small text-muted mb-0">{{ p.count }} medicine{{ 's' if p.count != 1 else '' }} available</p>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- HOW IT WORKS -->
+  <div class="mt-5 text-center">
+    <p class="section-eyebrow">Simple Process</p>
+    <h2 class="section-title">How MedShare Works</h2>
+    <p class="section-sub">From listing to delivery, in four simple steps</p>
+    <div class="row">
+      <div class="col-md-3">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-title">List or Browse</div>
+          <div class="step-desc">Sellers list near-expiry medicines. Patients browse & search discounted stock.</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-title">Admin Verifies</div>
+          <div class="step-desc">Every seller & listing is verified by admin before going live.</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-title">Order at a Discount</div>
+          <div class="step-desc">Choose the medicine you need and place your order at the discounted price.</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-title">Track & Receive</div>
+          <div class="step-desc">Sellers update order status until it's delivered to you.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLES -->
+  <div class="mt-5 text-center">
+    <p class="section-eyebrow">Who Can Join</p>
+    <h2 class="section-title">Built for Everyone in the Chain</h2>
+    <p class="section-sub">Different roles, one shared goal — less wastage, more access</p>
+    <div class="row g-3 justify-content-center">
+      <div class="col-md-4">
+        <div class="role-card text-start">
+          <div class="role-icon" style="background:var(--emerald-50);">🧑‍⚕️</div>
+          <h6 class="fw-bold">Patient</h6>
+          <p class="small text-muted mb-0">Buy genuine medicines at a discount before they expire.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="role-card text-start">
+          <div class="role-icon" style="background:#f0fdfa;">🏪</div>
+          <h6 class="fw-bold">Seller / Pharmacy</h6>
+          <p class="small text-muted mb-0">List near-expiry stock and recover value before it's wasted.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="role-card text-start">
+          <div class="role-icon" style="background:#f5f3ff;">🛡️</div>
+          <h6 class="fw-bold">Admin</h6>
+          <p class="small text-muted mb-0">Verifies every seller and listing to keep the platform trustworthy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROWSE / SEARCH -->
+  <div class="mt-5" id="browse">
+    <p class="section-eyebrow">Marketplace</p>
+    <h2 class="section-title">Browse Discounted Medicines</h2>
+
+    <form method="get" class="d-flex mb-4 gap-2 flex-wrap">
+      <input type="text" name="search" class="form-control" style="max-width:320px;" placeholder="Search by name or generic name..." value="{{ request.args.get('search','') }}">
+      <select name="category" class="form-select" style="max-width:180px;">
+        <option value="">All Categories</option>
+        <option value="Tablet" {% if request.args.get('category')=='Tablet' %}selected{% endif %}>Tablet</option>
+        <option value="Syrup" {% if request.args.get('category')=='Syrup' %}selected{% endif %}>Syrup</option>
+        <option value="Injection" {% if request.args.get('category')=='Injection' %}selected{% endif %}>Injection</option>
+        <option value="Ointment" {% if request.args.get('category')=='Ointment' %}selected{% endif %}>Ointment</option>
+        <option value="Other" {% if request.args.get('category')=='Other' %}selected{% endif %}>Other</option>
+      </select>
+      <button class="btn btn-success">Search</button>
+    </form>
+
+    <div class="category-strip mb-4">
+      <a href="{{ url_for('index') }}" class="category-pill {% if not request.args.get('category') %}active{% endif %}">
+        <span class="icon">🔎</span><span class="label">All</span>
+      </a>
+      <a href="{{ url_for('index', category='Tablet') }}" class="category-pill {% if request.args.get('category')=='Tablet' %}active{% endif %}">
+        <span class="icon">💊</span><span class="label">Tablet</span>
+      </a>
+      <a href="{{ url_for('index', category='Syrup') }}" class="category-pill {% if request.args.get('category')=='Syrup' %}active{% endif %}">
+        <span class="icon">🧴</span><span class="label">Syrup</span>
+      </a>
+      <a href="{{ url_for('index', category='Injection') }}" class="category-pill {% if request.args.get('category')=='Injection' %}active{% endif %}">
+        <span class="icon">💉</span><span class="label">Injection</span>
+      </a>
+      <a href="{{ url_for('index', category='Ointment') }}" class="category-pill {% if request.args.get('category')=='Ointment' %}active{% endif %}">
+        <span class="icon">🧪</span><span class="label">Ointment</span>
+      </a>
+      <a href="{{ url_for('index', category='Other') }}" class="category-pill {% if request.args.get('category')=='Other' %}active{% endif %}">
+        <span class="icon">📦</span><span class="label">Other</span>
+      </a>
+    </div>
+
+    <div class="row">
+      {% for m in medicines %}
+      <div class="col-md-4 mb-4">
+        <div class="card med-card h-100">
+          {% if m.image_filename %}
+          <img src="{{ url_for('static', filename='uploads/' + m.image_filename) }}" class="med-card-img" alt="{{ m.name }}">
+          {% else %}
+          <div class="med-card-img-placeholder">💊</div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ m.name }}
+              {% if m.category %}<span class="badge badge-category">{{ m.category }}</span>{% endif %}
+            </h5>
+            {% if m.generic_name %}<p class="generic-name mb-1">Generic: {{ m.generic_name }}</p>{% endif %}
+            <p class="mb-1"><span class="text-decoration-line-through text-muted">₹{{ m.original_price }}</span>
+               <span class="fw-bold text-success ms-2">₹{{ m.discounted_price }}</span>
+               <span class="badge badge-discount ms-1">{{ m.discount_percent }}% OFF</span>
+            </p>
+            <p class="mb-1 small">Expires: {{ m.expiry_date }}
+              {% if m.days_to_expiry <= 7 %}<span class="badge bg-danger ms-1">⚠️ Only {{ m.days_to_expiry }} days left!</span>
+              {% elif m.days_to_expiry <= 30 %}<span class="badge bg-warning text-dark ms-1">⏳ {{ m.days_to_expiry }} days left</span>
+              {% endif %}
+            </p>
+            <p class="mb-2 small text-muted">Sold by: {{ m.seller.display_name }}</p>
+            <a href="{{ url_for('medicine_detail', med_id=m.id) }}" class="btn btn-sm btn-outline-success">View & Order</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12">
+        <div class="empty-state">
+          <div class="icon">🔍💊</div>
+          <h5>No Medicines Found</h5>
+          <p>Try a different search term or check back later for new deals.</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
